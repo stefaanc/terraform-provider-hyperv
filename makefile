@@ -20,16 +20,22 @@ COVER_HTML_FILE  := _coverage.html
 GO_TEST_FILES    := $(if $(IS_WINDOWS),$(shell dir /S /B *_test.go),$(shell find . -type f -name '*_test.go'))
 GO_BUILD_FILES   := $(if $(IS_WINDOWS),$(shell dir /S /B *.go | findstr /v /c:"_test.go"),$(shell find . -type f -name '*.go' | grep -v '*_test.go'))
 
-.PHONY: tidy       # tidy the module definition
+#
+# make commands:
+
+.PHONY: tidy       # tidy the mod.go file
 .PHONY: test       # test the module and generate a test log and coverage report
 .PHONY: log        # write the test log for the module to stdout
 .PHONY: report     # write the coverage report for the module to stdout
-.PHONY: browse     # open browser to analyse coverage for the module (only on windows)
+.PHONY: browse     # open browser to analyse the coverage for the module (only on windows)
 .PHONY: build      # build the module
 .PHONY: release    # release the module
 
-.PHONY: default    # change to the actions you want to run by default
+.PHONY: default    # !!! you can change the actions you want to run by default
 default: test log
+
+#
+# tidying
 
 tidy:
 	go mod tidy
