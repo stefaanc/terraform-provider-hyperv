@@ -1,3 +1,9 @@
+//
+// Copyright (c) 2019 Sean Reynolds, Stefaan Coussement
+// MIT License
+//
+// more info: https://github.com/stefaanc/terraform-provider-hyperv
+//
 module github.com/stefaanc/terraform-provider-hyperv
 
 go 1.13

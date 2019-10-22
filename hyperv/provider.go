@@ -24,7 +24,8 @@ func Provider() terraform.ResourceProvider {
             "type": &schema.Schema{
                 Description: "The type of connection to the hyperv-server: \"local\" or \"ssh\"",
                 Type:     schema.TypeString,
-                Required: true,
+                Optional: true,
+                Default: "local",
 
                 ValidateFunc:     validation.StringInSlice([]string{ "local", "ssh" }, true),
                 StateFunc:        tfutil.StateToLower(),
@@ -62,7 +63,7 @@ func Provider() terraform.ResourceProvider {
                 Sensitive: true,
             },
             "insecure": &schema.Schema{                            // config ignored when type is not "ssh"
-                Description: "Allow insecure communication - don't check the server certificate",
+                Description: "Allow insecure communication - disables checking of the server certificate",
                 Type:     schema.TypeBool,
                 Optional: true,
                 Default: false,

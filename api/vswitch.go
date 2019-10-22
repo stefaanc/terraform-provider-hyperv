@@ -63,13 +63,6 @@ func (c *HypervClient) UpdateVSwitch(vs *VSwitch, vsProperties *VSwitch) error {
         return fmt.Errorf("[ERROR][terraform-provider-hyperv/api/vs.Update(vsProperties)] missing 'vs.Name'")
     }
 
-    if vsProperties.SwitchType == "" {
-        return fmt.Errorf("[ERROR][terraform-provider-hyperv/api/vs.Update(vsProperties)] missing 'vsProperties.SwitchType'")
-    }
-    if strings.ToLower(vsProperties.SwitchType) == "private" && strings.ToLower(vsProperties.SwitchType) != "internal" && vsProperties.NetAdapterName == "" && vsProperties.NetAdapterInterfaceDescription == "" {
-        return fmt.Errorf("[ERROR][terraform-provider-hyperv/api/vs.Update(vsProperties)] missing 'vsProperties.NetAdapterName' or 'vsProperties.NetAdapterInterfaceDescription' for \"external\" switch")
-    }
-
     return updateVSwitch(c, vs, vsProperties)
 }
 
@@ -106,6 +99,12 @@ func createVSwitch(c *HypervClient, vsProperties *VSwitch) error {
         log.Printf("[ERROR][terraform-provider-hyperv/api/createVSwitch()] script exitcode: %d", runnerErr.ExitCode())
         log.Printf("[ERROR][terraform-provider-hyperv/api/createVSwitch()] script stdout: %s", stdout.String())
         log.Printf("[ERROR][terraform-provider-hyperv/api/createVSwitch()] script stderr: %s", stderr.String())
+
+        // get to the cause of a "runner failed" error to display in terraform UI
+        if strings.Contains(runnerErr.Error(), "runner failed") {
+            err = fmt.Errorf("[terraform-provider-hyperv/api/createVSwitch()] runner: %s", stderr.String())
+        }
+
         return err
     }
 
@@ -123,9 +122,9 @@ $ProgressPreference = 'SilentlyContinue'   # progress-bar fails when using ssh
 
 $vsProperties = $( ConvertFrom-Json -InputObject '{{.VSPropertiesJSON}}' )
 
-$VMSwitchObject = Get-VMSwitch -Name $vsProperties.Name -ErrorAction 'SilentlyContinue'
-if ($VMSwitchObject) {
-    throw "[ERROR][terraform-provider-hyperv/api/createVSwitch()] vswitch '$($vsProperties.Name)' already exists"
+$VMSwitchObject = Get-VMSwitch -Name $vsProperties.Name -ErrorAction 'Ignore'
+if ( $VMSwitchObject ) {
+    throw "vswitch '$( $vsProperties.Name )' already exists"
 }
 
 $arguments = @{
@@ -133,11 +132,11 @@ $arguments = @{
     Notes = $vsProperties.Notes
 }
 
-if ( $vsProperties -and $vsProperties.SwitchType -and ($vsProperties.SwitchType.ToLower() -eq "private") -or ($vsProperties.SwitchType.ToLower() -eq "internal") ) {
+if ( $vsProperties.SwitchType -and ( $vsProperties.SwitchType.ToLower() -eq "private" ) -or ( $vsProperties.SwitchType.ToLower() -eq "internal" ) ) {
     $arguments.SwitchType = [Microsoft.HyperV.PowerShell.VMSwitchType]$vsProperties.SwitchType
 } else {
     $arguments.AllowManagementOS = $vsProperties.AllowManagementOS
-    if ($vsProperties.NetAdapterName) {
+    if ( $vsPropertiesNetAdapterName ) {
         $arguments.NetAdapterName = $vsProperties.NetAdapterName
     } else {
         $arguments.NetAdapterInterfaceDescription = $vsProperties.NetAdapterInterfaceDescription
@@ -162,10 +161,15 @@ func readVSwitch(c *HypervClient, vs *VSwitch) (vswitch *VSwitch, err error) {
         var runnerErr runner.Error
         errors.As(err, &runnerErr)
         log.Printf("[ERROR][terraform-provider-hyperv/api/readVSwitch()] cannot read vswitch %q\n", vs.Name)
-log.Printf("[ERROR][terraform-provider-hyperv/api/readVSwitch()] script command: %s", runnerErr.Command())
         log.Printf("[ERROR][terraform-provider-hyperv/api/readVSwitch()] script exitcode: %d", runnerErr.ExitCode())
         log.Printf("[ERROR][terraform-provider-hyperv/api/readVSwitch()] script stdout: %s", stdout.String())
         log.Printf("[ERROR][terraform-provider-hyperv/api/readVSwitch()] script stderr: %s", stderr.String())
+
+        // get to the cause of a "runner failed" error to display in terraform UI
+        if strings.Contains(runnerErr.Error(), "runner failed") {
+            err = fmt.Errorf("[terraform-provider-hyperv/api/readVSwitch()] runner: %s", stderr.String())
+        }
+
         return nil, err
     }
 
@@ -189,24 +193,24 @@ type readVSwitchArguments struct{
 var readVSwitchScript = script.New("readVSwitch", "powershell", `
 $ErrorActionPreference = 'Stop'
 
-$VMSwitchObject = Get-VMSwitch -Name '{{.Name}}'
-if (-not $VMSwitchObject) {
-    throw "[ERROR][terraform-provider-hyperv/api/createVSwitch()] cannot find vswitch '{{.Name}}'"
+$VMSwitchObject = Get-VMSwitch -Name '{{.Name}}' -ErrorAction 'Ignore'
+if ( -not $VMSwitchObject ) {
+    throw "cannot find vswitch '{{.Name}}'"
 }
 
 $VSwitch = @{
     Name              = $VMSwitchObject.Name
-    SwitchType        = ([string]$VMSwitchObject.SwitchType).ToLower()
+    SwitchType        = $( [string]$VMSwitchObject.SwitchType ).ToLower()
     Notes             = $VMSwitchObject.Notes
     AllowManagementOS = $VMSwitchObject.AllowManagementOS
 }
 
-if ($VMSwitchObject.NetAdapterInterfaceDescription) {
+if ( $VMSwitchObject.NetAdapterInterfaceDescription ) {
     $VSwitch.NetAdapterName                 = $( Get-NetAdapter -InterfaceDescription $VMSwitchObject.NetAdapterInterfaceDescription ).Name
     $VSwitch.NetAdapterInterfaceDescription = $VMSwitchObject.NetAdapterInterfaceDescription
 }
 
-Write-Output $(ConvertTo-Json -InputObject $VSwitch)
+Write-Output $( ConvertTo-Json -InputObject $VSwitch )
 `)
 
 //------------------------------------------------------------------------------
@@ -234,6 +238,12 @@ func updateVSwitch(c *HypervClient, vs *VSwitch, vsProperties *VSwitch) error {
         log.Printf("[ERROR][terraform-provider-hyperv/api/updateVSwitch()] script exitcode: %d", runnerErr.ExitCode())
         log.Printf("[ERROR][terraform-provider-hyperv/api/updateVSwitch()] script stdout: %s", stdout.String())
         log.Printf("[ERROR][terraform-provider-hyperv/api/updateVSwitch()] script stderr: %s", stderr.String())
+
+        // get to the cause of a "runner failed" error to display in terraform UI
+        if strings.Contains(runnerErr.Error(), "runner failed") {
+            err = fmt.Errorf("[terraform-provider-hyperv/api/updateVSwitch()] runner: %s", stderr.String())
+        }
+
         return err
     }
 
@@ -250,25 +260,26 @@ var updateVSwitchScript = script.New("updateVSwitch", "powershell", `
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'   # progress-bar fails when using ssh
 
-$VMSwitchObject = Get-VMSwitch -Name '{{.Name}}'
-if (-not $VMSwitchObject) {
-    throw "[ERROR][terraform-provider-hyperv/api/updateVSwitch()] cannot find vswitch '{{.Name}}'"
+$VMSwitchObject = Get-VMSwitch -Name '{{.Name}}' -ErrorAction 'Ignore'
+if ( -not $VMSwitchObject ) {
+    throw "cannot find vswitch '{{.Name}}'"
 }
 
 $vsProperties = $( ConvertFrom-Json -InputObject '{{.VSPropertiesJSON}}' )
 
 $arguments = @{
     VMSwitch = $VMSwitchObject
-    Notes    = $vsProperties.Notes
+    Notes = $vsProperties.Notes
 }
 
-if ( $vsProperties -and $vsProperties.SwitchType -and (($vsProperties.SwitchType.ToLower() -eq "private") -or ($vsProperties.SwitchType.ToLower() -eq "internal")) ) {
+if ( $vsProperties.SwitchType -and ( ( $vsProperties.SwitchType.ToLower() -eq "private" ) -or ( $vsProperties.SwitchType.ToLower() -eq "internal" ) ) ) {
     $arguments.SwitchType = [Microsoft.HyperV.PowerShell.VMSwitchType]$vsProperties.SwitchType
 } else {
     $arguments.AllowManagementOS = $vsProperties.AllowManagementOS
-    if ($vsProperties.NetAdapterName) {
+
+    if ( $vsProperties.NetAdapterName ) {
         $arguments.NetAdapterName = $vsProperties.NetAdapterName
-    } else {
+    } elseif ( $vsProperties.NetAdapterInterfaceDescription ) {
         $arguments.NetAdapterInterfaceDescription = $vsProperties.NetAdapterInterfaceDescription
     }
 }
@@ -294,6 +305,12 @@ func deleteVSwitch(c *HypervClient, vs *VSwitch) error {
         log.Printf("[ERROR][terraform-provider-hyperv/api/deleteVSwitch()] script exitcode: %d", runnerErr.ExitCode())
         log.Printf("[ERROR][terraform-provider-hyperv/api/deleteVSwitch()] script stdout: %s", stdout.String())
         log.Printf("[ERROR][terraform-provider-hyperv/api/deleteVSwitch()] script stderr: %s", stderr.String())
+
+        // get to the cause of a "runner failed" error to display in terraform UI
+        if strings.Contains(runnerErr.Error(), "runner failed") {
+            err = fmt.Errorf("[terraform-provider-hyperv/api/deleteVSwitch()] runner: %s", stderr.String())
+        }
+
         return err
     }
 
@@ -309,9 +326,9 @@ var deleteVSwitchScript = script.New("deleteVSwitch", "powershell", `
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'   # progress-bar fails when using ssh
 
-$VMSwitchObject = Get-VMSwitch -Name '{{.Name}}'
-if (-not $VMSwitchObject) {
-    throw "[ERROR][terraform-provider-hyperv/api/deleteVSwitch()] cannot find vswitch '{{.Name}}'"
+$VMSwitchObject = Get-VMSwitch -Name '{{.Name}}' -ErrorAction 'Ignore'
+if ( -not $VMSwitchObject ) {
+    throw "cannot find vswitch '{{.Name}}'"
 }
 
 Remove-VMSwitch -VMSwitch $VMSwitchObject -Force | Out-Default
