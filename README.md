@@ -141,7 +141,7 @@ Arguments     | &nbsp;   | Description
 :-------------|:--------:|:-----------
 `name`        | Required | The name of the virtual switch.
 ` `           | ` `      | ` `
-`x_lifecycle` | Optional | see [](#extended-lifecycle-customizations-for-data-sources)
+`x_lifecycle` | Optional | see [x_lifecycle for data-sources](#extended-lifecycle-customizations-for-data-sources)
   
 Exports                             | &nbsp;   | Description
 :-----------------------------------|:--------:|:-----------
@@ -227,7 +227,7 @@ Arguments                           | &nbsp;   | Description
 `net_adapter_name`                  | Optional | Use the existing network adapter with this name.  <br/>- must not be configured when `switch_type = "private"` or `switch_type = "internal"`  <br/>- must not be configured  when `switch_type = "external"` and `net_adapter_interface_description` is configured  <br/>- required when `switch_type = "external"` and `net_adapter_interface_description` is not configured 
 `net_adapter_interface_description` | Optional | Disable existing network adapter and create new network adapter for this interface.  <br/>- must not be configured when `switch_type = "private"` or `switch_type = "internal"`  <br/>- must not be configured when `switch_type = "external"` and `net_adapter_name` is configured  <br/>- required when `switch_type = "external"` and `net_adapter_name` is not configured
 ` `                                 | ` `      | ` `
-`x_lifecycle`                       | Optional | see [](#extended-lifecycle-customizations-for-resources)
+`x_lifecycle`                       | Optional | see [x_lifecycle for resources](#extended-lifecycle-customizations-for-resources)
   
 Exports                             | &nbsp;   | Description
 :-----------------------------------|:--------:|:-----------
