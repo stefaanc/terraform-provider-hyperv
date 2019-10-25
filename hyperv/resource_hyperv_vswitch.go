@@ -63,14 +63,14 @@ func resourceHypervVSwitch () *schema.Resource {
                 Computed: true,
             },
             "net_adapter_name": &schema.Schema{                    // defaults to "" when switch_type is "private" or "internal"
-                Type:     schema.TypeString,                       // when set for "external" switch: uses existing adapter with this name
+                Type:     schema.TypeString,
                 Optional: true,
                 Computed: true,
 
                 DiffSuppressFunc: tfutil.DiffSuppressCase(),
             },
             "net_adapter_interface_description": &schema.Schema{   // defaults to "" when switch_type is "private" or "internal"
-                Type:     schema.TypeString,                       // when set for "external" switch: disables existing adapter, creates new adapter for this interface
+                Type:     schema.TypeString,
                 Optional: true,
                 Computed: true,
 

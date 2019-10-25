@@ -109,7 +109,7 @@ provider "hyperv" {
 Arguments  | &nbsp;   | Description
 :----------|:--------:|:-----------
 `type`     | Optional | The type of connection to the hyperv-server: `"local"` or `"ssh"`.  <br/>- defaults to `"local"`
-` `        | ` `      | ` `
+---------- | &nbsp;   | &nbsp;
 `host`     | Optional | The hyperv-server. <br/>- ignored when `type = "local"` <br/>- defaults to `"localhost"`
 `port`     | Optional | The hyperv-server's port for ssh. <br/>- ignored when `type = "local"` <br/>- defaults to `22`
 `user`     | Optional | The user name for communication with the hyperv-server. <br/>- ignored when `type = "local"` <br/>- required when `type = "ssh"`
@@ -140,7 +140,7 @@ data "hyperv_vswitch" "default" {
 Arguments     | &nbsp;   | Description
 :-------------|:--------:|:-----------
 `name`        | Required | The name of the virtual switch.
-` `           | ` `      | ` `
+----------    | &nbsp;   | &nbsp;
 `x_lifecycle` | Optional | see [x_lifecycle for data-sources](#extended-lifecycle-customizations-for-data-sources)
   
 Exports                             | &nbsp;   | Description
@@ -222,11 +222,11 @@ Arguments                           | &nbsp;   | Description
 `name`                              | Required | The name of the virtual switch.
 `switch_type`                       | Required | The type of virtual switch: `"private"`, `"internal"` or `"external"`.
 `notes`                             | Optional | Notes added to the virtual switch.
-` `                                 | ` `      | ` `
+----------                          | &nbsp;   | &nbsp;
 `allow_management_os`               | Optional | The hyperv-server is allowed to participate into the communication on the virtual switch.  <br/>- must not be configured or set to `false` when `switch_type = "private"`.  <br/>- must not be configured or set to `true` when `switch_type = "internal"`  <br/>- defaults to `false` when `switch_type = "external"`
 `net_adapter_name`                  | Optional | Use the existing network adapter with this name.  <br/>- must not be configured when `switch_type = "private"` or `switch_type = "internal"`  <br/>- must not be configured  when `switch_type = "external"` and `net_adapter_interface_description` is configured  <br/>- required when `switch_type = "external"` and `net_adapter_interface_description` is not configured 
 `net_adapter_interface_description` | Optional | Disable existing network adapter and create new network adapter for this interface.  <br/>- must not be configured when `switch_type = "private"` or `switch_type = "internal"`  <br/>- must not be configured when `switch_type = "external"` and `net_adapter_name` is configured  <br/>- required when `switch_type = "external"` and `net_adapter_name` is not configured
-` `                                 | ` `      | ` `
+----------                          | &nbsp;   | &nbsp;
 `x_lifecycle`                       | Optional | see [x_lifecycle for resources](#extended-lifecycle-customizations-for-resources)
   
 Exports                             | &nbsp;   | Description
