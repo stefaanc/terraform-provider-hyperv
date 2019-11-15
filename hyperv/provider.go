@@ -71,11 +71,15 @@ func Provider() terraform.ResourceProvider {
         },
 
         DataSourcesMap: map[string]*schema.Resource {
-            "hyperv_vswitch": dataSourceHypervVSwitch(),
+            "hyperv_interface": dataSourceHypervInterface(),
+            "hyperv_management_os": dataSourceHypervManagementOS(),
+            "hyperv_network": dataSourceHypervNetwork(),
+            "hyperv_network_adapter": dataSourceHypervNetworkAdapter(),
+//            "hyperv_vswitch": dataSourceHypervVSwitch(),
         },
 
         ResourcesMap: map[string]*schema.Resource{
-            "hyperv_vswitch": resourceHypervVSwitch(),
+//            "hyperv_vswitch": resourceHypervVSwitch(),
         },
 
         ConfigureFunc: providerConfigure,

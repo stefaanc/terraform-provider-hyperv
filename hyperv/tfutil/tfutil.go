@@ -88,9 +88,9 @@ func DiffSuppressCase() schema.SchemaDiffSuppressFunc {
 //------------------------------------------------------------------------------
 
 func GetResourceDataMap(d *schema.ResourceData, name string) (m map[string]interface{}) {
-    list := d.Get(name).([]interface{})
-    if len(list) > 0 {
-        m = list[0].(map[string]interface{})
+    l := d.Get(name).([]interface{})
+    if len(l) > 0 {
+        m = l[0].(map[string]interface{})
     }
     return m
 }

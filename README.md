@@ -117,9 +117,34 @@ Arguments  | &nbsp;   | Description
 `insecure` | Optional | Allow insecure communication - disables checking of the server certificate. <br/>- ignored when `type = "local"` <br/>- defaults to `false` <br/><br/> When `insecure = false`, the hyperv-server's certificate is checked against the user's known hosts, as specified by the file `~/.ssh/known_hosts`.  
 
 > :bulb:  
-> The Hyper-V API needs elevated credentials ("Run as Administrator") for all methods.
+> The Hyper-V API needs elevated credentials ("Run as Administrator") for most methods.
 > When using `type = "local"`, you need to run terraform from an elevated shell.
 > When using `type = "ssh"`, terraform will always use the most elevated credentials available to the configured user.
+
+The hyperv provider provides access to a number of infrastructure objects.  It uses the PowerShell Hyper-V API to access these objects.
+
+Compared to other implementations of the Hyper-V provider, we didn't follow the Powershell Hyper-V API literally to develop the terraform object model.  This is because the PowerShell API is an imperative API which often includes parameters for convenience and/or parameters for backward compatibility, which can be confusing and hard to work with.  
+
+To illustrate this, consider the PowerShell `New-VMSwitch` method.  The `-SwitchType` is used to create a `"Private"` switch (which implies no vnetwork-adapter for the management-OS) or to create an `"Internal"` switch (which implies a single vnetwork-adapter for the management-OS).  For an `"External"` switch one should not use the `-SwitchType` option but instead use the `-NetAdapterName` option to specify the one or more network-adapters, and the `-AllowManagementOS` option to create a single vnetwork-adapter for the management-OS.  Additional vnetwork-adapters for the management-OS can then be added using the PowerShell `New-VMNetworkAdaptor -ManagementOS` method.
+In contrast, our terraform `vswitch` resource does not include properties corresponding to `-SwitchType` or `-AllowManagementOS`.  Instead of mapping the PowerShell API, we use the underlying windows object model where we create a switch with physical network-adapters for an `"External"` switch, or without physical network-adapters for a `"Private"` switch, and then optionally add vnetwork-adapters for the management-OS - transforming a `"Private"` switch into an `"Internal"` switch.  Basically, the presence or absence of vnetwork-adapters for the management-OS is not an inherent property of the `vswitch` resource, the `vnetwork_adapter` resources are created separately.
+
+SwitchType   | vswitch network-adapters | management-OS vnetwork-adapters
+:------------|:--------------------:|:---------------------------:
+`"Private"`  | 0                    | 0 
+`"Internal"` | 0                    | >= 1
+`"External"` | >= 1                 | >= 0
+
+One of the most difficult topics to understand is Hyper-V networking.  Since I found it hard to find good high-level conceptual information for this on the internet, I try to provide (my understanding of) a simplified high-level (and probably not 100% technically correct) summary for some of these concepts in the following drawing.
+
+![vswitch.png](./docs/images/vswitch.png)
+
+There are two objects that need a bit more discussion.  The network-adapters are the objects controlling connection related configuration, such as IP-settings, DNS-client-settings and other Interface-settings.  The vnetwork-adapters are objects controlling vswitch-port related configuration, such as VLAN-settings and bandwidth-reservation-settings.
+
+When creating an "external" virtual switch, the network-adapters that are picked-up by the switch, typically originally used for the management-OS (the Hyper-V host), are stripped of all their IP- and DNS-client-settings.  Once the switch is created, the management-OS does not have direct access to these network-adapters any more.  The switch's network-adapters cannot be seen when using `ipconfig` on the management-OS, but they are still there and are accessible under `Network Connections` in the control panel.  These network-adapters can be seen as the "Uplink"-ports of the switch.  In the context of a VLAN, they are "Trunk"-ports.  In the context of a private VLAN, they are "Promiscuous" ports.
+ 
+When creating a vnetwork-adapter for the management-OS, the system will also create a network-adapter for the management-OS.  This network-adapter is visible to the management-OS and can be configured by the management-OS.  This new network-adapter can be seen when using `ipconfig` on the management-OS. 
+
+When creating a vnetwork-adapter for a virtual machine, the system will also create a network-adapter for that virtual machine.  This network-adapter is not visible to the management-OS but can be configured from inside the virtual machine.  This new network-adapter can be seen when using `ipconfig` (or the linux equivalent `ifconfig`) on the virtual machine. 
 
 
 

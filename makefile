@@ -5,7 +5,7 @@
 # more info: https://github.com/stefaanc/terraform-provider-hyperv
 #
 PLUGIN_NAME      := terraform-provider-hyperv
-PLUGIN_VERSION   := 0.0.0
+PLUGIN_VERSION   := 0.0.1
 
 OS               := $(shell go env GOOS)
 ARCH             := $(shell go env GOARCH)
