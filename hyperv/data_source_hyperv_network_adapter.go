@@ -263,7 +263,7 @@ func dataSourceHypervNetworkAdapterRead(d *schema.ResourceData, m interface{}) e
     // set id
     d.SetId(id)
 
-    log.Printf("[INFO][terraform-provider-hyperv] read  hyperv_network_adapter %q\n", id)
+    log.Printf("[INFO][terraform-provider-hyperv] read hyperv_network_adapter %q\n", id)
     return nil
 }
 

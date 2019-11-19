@@ -3,51 +3,44 @@
 ###
 
 provider "hyperv" {
-    version = "~> 0.0.0"
-    alias = "local"
-
     type = "local"
 }
 
 data "hyperv_interface" "test" {
-    provider = hyperv.local
-
     vnetwork_adapter_name = "External Switch"
 }
 
 data "hyperv_management_os" "local" {
-    provider = hyperv.local
 }
 
 data "hyperv_network" "network" {
-    provider = hyperv.local
-
     name = "network"
 }
 
 data "hyperv_network_adapter" "external" {
-    provider = hyperv.local
-
     name = "vEthernet (External Switch)"
 }
 
-# data "hyperv_vswitch" "vs_default" {
-#     provider = hyperv.local
+data "hyperv_vnetwork_adapter" "external" {
+    name = "External Switch"
+}
 
-#     name = "Default Switch"
+data "hyperv_vnetwork_adapter" "test" {
+    name          = "Network Adapter"
+    vmachine_name = "Video"
+}
 
-#     x_lifecycle {
-#         ignore_error_if_not_exists = true
-#     }
-# }
+data "hyperv_vswitch" "default" {
+    name = "Default Switch"
 
-# resource "hyperv_vswitch" "vs_private" {
-#     provider = hyperv.local
+    x_lifecycle {
+        ignore_error_if_not_exists = true
+    }
+}
 
-#     name                = "Private Switch"
-#     switch_type         = "private"
-#     notes               = "private notes"
-# }
+data "hyperv_vswitch" "external" {
+     name = "External Switch"
+}
 
 # resource "hyperv_vswitch" "vs_internal" {
 #     provider = hyperv.local

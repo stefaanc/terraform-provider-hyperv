@@ -83,15 +83,15 @@ var readNetworkScript = script.New("readNetwork", "powershell", `
     $ErrorActionPreference = 'Stop'
     $ProgressPreference = 'SilentlyContinue'   # progress-bar fails when using ssh
 
-    $NetConnectionProfileObject = Get-NetConnectionProfile -Name '{{.Name}}' -ErrorAction 'Ignore'
-    if ( -not $NetConnectionProfileObject ) {
+    $networkConnectionProfile = Get-NetConnectionProfile -Name '{{.Name}}' -ErrorAction 'Ignore'
+    if ( -not $networkConnectionProfile ) {
         throw "cannot find network '{{.Name}}'"
     }
 
     # prepare result
     $nProperties = @{
-        Name              = $NetConnectionProfileObject.Name
-        ConnectionProfile = $NetConnectionProfileObject.NetworkCategory.ToString()
+        Name              = $networkConnectionProfile.Name
+        ConnectionProfile = $networkConnectionProfile.NetworkCategory.ToString()
     }
 
     Write-Output $( ConvertTo-Json -InputObject $nProperties )

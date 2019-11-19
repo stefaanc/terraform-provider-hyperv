@@ -85,8 +85,7 @@ Property                     | PowerShell API
 :----------------------------|:-------------- 
 `name`                       | `Add-VMNetworkAdapter -Name`
 `vswitch_name`               | `Add-VMNetworkAdapter -SwitchName`
-`vmachine_name`              | `Add-VMNetworkAdapter -VMName`
-`management_os`              | `Add-VMNetworkAdapter -ManagementOS`
+`vmachine_name`              | `Add-VMNetworkAdapter -VMName` <br/> or <br/> `Add-VMNetworkAdapter -ManagementOS`
 `mac_address`                | `Add-VMNetworkAdapter -DynamicMacAddress` <br/> or <br/> `Add-VMNetworkAdapter -StaticMacAddress`
 `allow_mac_address_spoofing` | `Set-VMNetworkAdapter -MacAddressSpoofing` 
 

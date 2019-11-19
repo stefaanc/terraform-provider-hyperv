@@ -19,9 +19,9 @@ import (
 
 //------------------------------------------------------------------------------
 
-func dataSourceHypervNetwork() *schema.Resource {
+func dataSourceHypervVSwitch () *schema.Resource {
     return &schema.Resource{
-        Read:   dataSourceHypervNetworkRead,
+        Read:   dataSourceHypervVSwitchRead,
 
         Schema: map[string]*schema.Schema{
             "name": &schema.Schema{
@@ -29,7 +29,13 @@ func dataSourceHypervNetwork() *schema.Resource {
                 Required: true,
             },
 
-            "connection_profile": &schema.Schema{
+            "network_adapter_name": &schema.Schema{
+                Type:     schema.TypeSet,
+                Computed: true,
+                Elem: &schema.Schema{ Type: schema.TypeString },
+            },
+
+            "notes": &schema.Schema{
                 Type:     schema.TypeString,
                 Computed: true,
             },
@@ -42,7 +48,7 @@ func dataSourceHypervNetwork() *schema.Resource {
 
 //------------------------------------------------------------------------------
 
-func dataSourceHypervNetworkRead(d *schema.ResourceData, m interface{}) error {
+func dataSourceHypervVSwitchRead(d *schema.ResourceData, m interface{}) error {
     c := m.(*api.HypervClient)
 
     name        := d.Get("name").(string)
@@ -53,25 +59,26 @@ func dataSourceHypervNetworkRead(d *schema.ResourceData, m interface{}) error {
         host = c.Host
     }
 
-    id := fmt.Sprintf("//%s/networks/%s", host, name)
+    id          := fmt.Sprintf("//%s/vswitches/%s", host, name)
 
-    log.Printf("[INFO][terraform-provider-hyperv] reading hyperv_network %q\n", id)
+    log.Printf("[INFO][terraform-provider-hyperv] reading hyperv_vswitch %q\n", id)
 
-    // read network
-    nQuery := new(api.Network)
-    nQuery.Name = name
+    // read vswitch
+    vs := new(api.VSwitch)
+    vs.Name = name
 
-    network, err := c.ReadNetwork(nQuery)
+    vswitch, err := c.ReadVSwitch(vs)
     if err != nil {
         // lifecycle customizations: ignore_error_if_not_exists
         if x_lifecycle != nil {
             ignore_error_if_not_exists := x_lifecycle["ignore_error_if_not_exists"].(bool)
-            if ignore_error_if_not_exists && strings.Contains(err.Error(), "cannot find network") {
-                log.Printf("[INFO][terraform-provider-hyperv] cannot read hyperv_network %q\n", id)
+            if ignore_error_if_not_exists && strings.Contains(err.Error(), "cannot find vswitch") {
+                log.Printf("[INFO][terraform-provider-hyperv] cannot read hyperv_vswitch %q\n", id)
 
                 // set zeroed properties
                 d.Set("name", "")
-                d.Set("connection_profile", "")
+                d.Set("network_adapter_name", schema.NewSet(schema.HashString, nil))
+                d.Set("notes", "")
 
                 // set computed lifecycle properties
                 x_lifecycle["exists"] = false
@@ -80,18 +87,26 @@ func dataSourceHypervNetworkRead(d *schema.ResourceData, m interface{}) error {
                 // set id
                 d.SetId(id)
 
-                log.Printf("[INFO][terraform-provider-hyperv] ignored error and added zeroed hyperv_network %q to terraform state\n", id)
+                log.Printf("[INFO][terraform-provider-hyperv] ignored error and added zeroed hyperv_vswitch %q to terraform state\n", id)
                 return nil
             }
         }
+
         // no lifecycle customizations
-        log.Printf("[ERROR][terraform-provider-hyperv] cannot read hyperv_network %q\n", id)
+        log.Printf("[ERROR][terraform-provider-hyperv] cannot read hyperv_vswitch %q\n", id)
         return err
     }
 
     // set properties
-    d.Set("name", network.Name)
-    d.Set("connection_profile", network.ConnectionProfile)
+    d.Set("name", vswitch.Name)
+
+    networkAdapters := make([]interface{}, len(vswitch.NetworkAdapters))
+    for i, n := range vswitch.NetworkAdapters {
+        networkAdapters[i] = n
+    }
+    d.Set("network_adapter_name", schema.NewSet(schema.HashString, networkAdapters))
+
+    d.Set("notes", vswitch.Notes)
 
     // set computed lifecycle properties
     if x_lifecycle != nil {
@@ -102,7 +117,7 @@ func dataSourceHypervNetworkRead(d *schema.ResourceData, m interface{}) error {
     // set id
     d.SetId(id)
 
-    log.Printf("[INFO][terraform-provider-hyperv] read hyperv_network %q\n", id)
+    log.Printf("[INFO][terraform-provider-hyperv] read hyperv_vswitch %q\n", id)
     return nil
 }
 

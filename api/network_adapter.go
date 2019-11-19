@@ -118,58 +118,58 @@ var readNetworkAdapterScript = script.New("readNetworkAdapter", "powershell", `
     $ErrorActionPreference = 'Stop'
     $ProgressPreference = 'SilentlyContinue'   # progress-bar fails when using ssh
 
-    $NetAdapterObject = Get-NetAdapter -Name '{{.Name}}' -ErrorAction 'Ignore'
-    if ( -not $NetAdapterObject ) {
+    $networkAdapter = Get-NetAdapter -Name '{{.Name}}' -ErrorAction 'Ignore'
+    if ( -not $networkAdapter ) {
         throw "cannot find network_adapter '{{.Name}}'"
     }
 
     # prepare result
     $naProperties = @{
-        Name              = $NetAdapterObject.Name
-        MACAddress        = $NetAdapterObject.MacAddress
+        Name              = $networkAdapter.Name
+        MACAddress        = $networkAdapter.MacAddress
 
         IPAddresses       = @()
         Gateways          = @()
         DNServers         = @()
 
-        AdminStatus       = $NetAdapterObject.AdminStatus.ToString()
-        OperationalStatus = $NetAdapterObject.ifOperStatus.ToString()
-        ConnectionStatus  = $NetAdapterObject.MediaConnectionState.ToString()
-        ConnectionSpeed   = $NetAdapterObject.LinkSpeed.ToString()
-        IsPhysical        = $NetAdapterObject.ConnectorPresent
+        AdminStatus       = $networkAdapter.AdminStatus.ToString()
+        OperationalStatus = $networkAdapter.ifOperStatus.ToString()
+        ConnectionStatus  = $networkAdapter.MediaConnectionState.ToString()
+        ConnectionSpeed   = $networkAdapter.LinkSpeed.ToString()
+        IsPhysical        = $networkAdapter.ConnectorPresent
     }
 
-    $IPv4BindingObject = Get-NetAdapterBinding -Name '{{.Name}}' -ComponentID 'ms_tcpip' -ErrorAction 'Ignore'
-    if ( $IPv4BindingObject ) {
-        $naProperties.IPv4InterfaceDisabled = -not $IPv4BindingObject.Enabled
+    $ipv4Binding = Get-NetAdapterBinding -Name '{{.Name}}' -ComponentID 'ms_tcpip' -ErrorAction 'Ignore'
+    if ( $ipv4Binding ) {
+        $naProperties.IPv4InterfaceDisabled = -not $ipv4Binding.Enabled
     }
 
-    $IPv4InterfaceObject = Get-NetIPInterface -InterfaceIndex $NetAdapterObject.InterfaceIndex -AddressFamily 'IPv4' -ErrorAction 'Ignore'
-    if ( $IPv4InterfaceObject ) {
-        $naProperties.IPv4InterfaceMetric = $IPv4InterfaceObject.IPv4InterfaceMetric
+    $ipv4Interface = Get-NetIPInterface -InterfaceIndex $networkAdapter.InterfaceIndex -AddressFamily 'IPv4' -ErrorAction 'Ignore'
+    if ( $ipv4Interface ) {
+        $naProperties.IPv4InterfaceMetric = $ipv4Interface.IPv4InterfaceMetric
     }
 
-    $IPv6BindingObject = Get-NetAdapterBinding -Name '{{.Name}}' -ComponentID 'ms_tcpip6' -ErrorAction 'Ignore'
-    if ( $IPv6BindingObject ) {
-        $naProperties.IPv6InterfaceDisabled = -not $IPv6BindingObject.Enabled
+    $ipv6Binding = Get-NetAdapterBinding -Name '{{.Name}}' -ComponentID 'ms_tcpip6' -ErrorAction 'Ignore'
+    if ( $ipv6Binding ) {
+        $naProperties.IPv6InterfaceDisabled = -not $ipv6Binding.Enabled
     }
 
-    $IPv6InterfaceObject = Get-NetIPInterface -InterfaceIndex $NetAdapterObject.InterfaceIndex -AddressFamily 'IPv6' -ErrorAction 'Ignore'
-    if ( $IPv6InterfaceObject ) {
-        $naProperties.IPv6InterfaceMetric = $IPv6InterfaceObject.IPv6InterfaceMetric
+    $ipv6Interface = Get-NetIPInterface -InterfaceIndex $networkAdapter.InterfaceIndex -AddressFamily 'IPv6' -ErrorAction 'Ignore'
+    if ( $ipv6Interface ) {
+        $naProperties.IPv6InterfaceMetric = $ipv6Interface.IPv6InterfaceMetric
     }
 
-    $DNSClientObject = Get-DNSClient -InterfaceIndex $NetAdapterObject.InterfaceIndex -ErrorAction 'Ignore'
-    if ( $DNSClientObject ) {
-        $naProperties.RegisterConnectionAddress = $DNSClientObject.RegisterThisConnectionsAddress
-        if ( $DNSClientObject.UseSuffixWhenRegistering ) {
-            $naProperties.RegisterConnectionSuffix  = $DNSClientObject.ConnectionSpecificSuffix
+    $dnsClient = Get-DNSClient -InterfaceIndex $networkAdapter.InterfaceIndex -ErrorAction 'Ignore'
+    if ( $dnsClient ) {
+        $naProperties.RegisterConnectionAddress = $dnsClient.RegisterThisConnectionsAddress
+        if ( $dnsClient.UseSuffixWhenRegistering ) {
+            $naProperties.RegisterConnectionSuffix  = $dnsClient.ConnectionSpecificSuffix
         }
     }
 
-    $IPv4AddressObject = Get-NetIPAddress -InterfaceIndex $NetAdapterObject.InterfaceIndex -AddressFamily 'IPv4' -AddressState 'Preferred' -ErrorAction 'Ignore'
-    if ( $IPv4AddressObject ) {
-        $IPv4AddressObject | foreach {
+    $ipv4Address = Get-NetIPAddress -InterfaceIndex $networkAdapter.InterfaceIndex -AddressFamily 'IPv4' -AddressState 'Preferred' -ErrorAction 'Ignore'
+    if ( $ipv4Address ) {
+        $ipv4Address | foreach {
             $naProperties.IPAddresses += @{
                 Address      = $_.IPAddress
                 PrefixLength = $_.PrefixLength
@@ -178,9 +178,9 @@ var readNetworkAdapterScript = script.New("readNetworkAdapter", "powershell", `
         }
     }
 
-    $IPv6AddressObject = Get-NetIPAddress -InterfaceIndex $NetAdapterObject.InterfaceIndex -AddressFamily 'IPv6' -AddressState 'Preferred' -ErrorAction 'Ignore'
-    if ( $IPv6AddressObject ) {
-        $IPv6AddressObject | foreach {
+    $ipv6Address = Get-NetIPAddress -InterfaceIndex $networkAdapter.InterfaceIndex -AddressFamily 'IPv6' -AddressState 'Preferred' -ErrorAction 'Ignore'
+    if ( $ipv6Address ) {
+        $ipv6Address | foreach {
             $naProperties.IPAddresses += @{
                 Address      = $_.IPAddress
                 PrefixLength = $_.PrefixLength
@@ -189,9 +189,9 @@ var readNetworkAdapterScript = script.New("readNetworkAdapter", "powershell", `
         }
     }
 
-    $IPv4RouteObject = Get-NetRoute -InterfaceIndex $NetAdapterObject.InterfaceIndex -AddressFamily 'IPv4' -DestinationPrefix '0.0.0.0/0' -ErrorAction 'Ignore'
-    if ( $IPv4RouteObject ) {
-        $IPv4RouteObject | foreach {
+    $ipv4Route = Get-NetRoute -InterfaceIndex $networkAdapter.InterfaceIndex -AddressFamily 'IPv4' -DestinationPrefix '0.0.0.0/0' -ErrorAction 'Ignore'
+    if ( $ipv4Route ) {
+        $ipv4Route | foreach {
             $naProperties.Gateways += @{
                 Address     = $_.NextHop
                 RouteMetric = $_.RouteMetric
@@ -199,9 +199,9 @@ var readNetworkAdapterScript = script.New("readNetworkAdapter", "powershell", `
         }
     }
 
-    $IPv6RouteObject = Get-NetRoute -InterfaceIndex $NetAdapterObject.InterfaceIndex -AddressFamily 'IPv6' -DestinationPrefix '::/0' -ErrorAction 'Ignore'
-    if ( $IPv6RouteObject ) {
-        $IPv6RouteObject | foreach {
+    $ipv6Route = Get-NetRoute -InterfaceIndex $networkAdapter.InterfaceIndex -AddressFamily 'IPv6' -DestinationPrefix '::/0' -ErrorAction 'Ignore'
+    if ( $ipv6Route ) {
+        $ipv6Route | foreach {
             $naProperties.Gateways += @{
                 Address     = $_.NextHop
                 RouteMetric = $_.RouteMetric
@@ -209,16 +209,16 @@ var readNetworkAdapterScript = script.New("readNetworkAdapter", "powershell", `
         }
     }
 
-    $IPv4DNServerAddressesObject = Get-DNSClientServerAddress -InterfaceIndex $NetAdapterObject.InterfaceIndex -AddressFamily 'IPv4' -ErrorAction 'Ignore'
-    if ( $IPv4DNServerAddressesObject ) {
-        $IPv4DNServerAddressesObject.ServerAddresses | foreach {
+    $ipv4DNServerAddresses = Get-DNSClientServerAddress -InterfaceIndex $networkAdapter.InterfaceIndex -AddressFamily 'IPv4' -ErrorAction 'Ignore'
+    if ( $ipv4DNServerAddresses ) {
+        $ipv4DNServerAddresses.ServerAddresses | foreach {
             $naProperties.DNServers += $_
         }
     }
 
-    $IPv6DNServerAddressesObject = Get-DNSClientServerAddress -InterfaceIndex $NetAdapterObject.InterfaceIndex -AddressFamily 'IPv6' -ErrorAction 'Ignore'
-    if ( $IPv6DNServerAddressesObject ) {
-        $IPv6DNServerAddressesObject.ServerAddresses | foreach {
+    $ipv6DNServerAddresses = Get-DNSClientServerAddress -InterfaceIndex $networkAdapter.InterfaceIndex -AddressFamily 'IPv6' -ErrorAction 'Ignore'
+    if ( $ipv6DNServerAddresses ) {
+        $ipv6DNServerAddresses.ServerAddresses | foreach {
             $naProperties.DNServers += $_
         }
     }

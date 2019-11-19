@@ -63,7 +63,7 @@ func Provider() terraform.ResourceProvider {
                 Sensitive: true,
             },
             "insecure": &schema.Schema{                            // config ignored when type is not "ssh"
-                Description: "Allow insecure communication - disables checking of the server certificate",
+                Description: "Allow insecure communication - disable checking of the server certificate",
                 Type:     schema.TypeBool,
                 Optional: true,
                 Default: false,
@@ -75,11 +75,12 @@ func Provider() terraform.ResourceProvider {
             "hyperv_management_os": dataSourceHypervManagementOS(),
             "hyperv_network": dataSourceHypervNetwork(),
             "hyperv_network_adapter": dataSourceHypervNetworkAdapter(),
-//            "hyperv_vswitch": dataSourceHypervVSwitch(),
+            "hyperv_vswitch": dataSourceHypervVSwitch(),
+//            "hyperv_vmachine": dataSourceHypervVMachine(),
+            "hyperv_vnetwork_adapter": dataSourceHypervVNetworkAdapter(),
         },
 
         ResourcesMap: map[string]*schema.Resource{
-//            "hyperv_vswitch": resourceHypervVSwitch(),
         },
 
         ConfigureFunc: providerConfigure,
